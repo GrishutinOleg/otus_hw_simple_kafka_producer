@@ -5,11 +5,12 @@ import io.circe.Encoder
 import io.circe.generic.auto._
 import java.util.Properties
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import AmazonBooks._
 
 
 
 //@JsonCodec
-case class AmazonBooks (
+/*case class AmazonBooks (
                                     Name: String,
                                     Author: String,
                                     UserRating: Double,
@@ -18,7 +19,7 @@ case class AmazonBooks (
                                     Year: Int,
                                     Genre: String
                                   )
-
+*/
 
 object SimleKafkaProducer extends App {
 
@@ -28,6 +29,7 @@ object SimleKafkaProducer extends App {
     "org.apache.kafka.common.serialization.StringSerializer")
   props.put("value.serializer",
     "org.apache.kafka.common.serialization.StringSerializer")
+
   props.put("acks","all")
   val producer = new KafkaProducer[String, String](props)
   val topic = "amazon_books"
@@ -40,8 +42,8 @@ object SimleKafkaProducer extends App {
 
   val records = csvFormat.parse(in)
   try {
-    implicit val bookvalue = records
-      .forEach(record => {
+    // implicit val bookvalue =
+    records.forEach(record => {
         val Name = record.get(0)
         val Author = record.get(1)
         val UserRating = record.get(2).toDouble
@@ -50,6 +52,7 @@ object SimleKafkaProducer extends App {
         val Year = record.get(5).toInt
         val Genre = record.get(6)
         val bookrecord = AmazonBooks(Name, Author, UserRating, Reviews, Price, Year, Genre).asJson.noSpaces
+        //val partnum = record.getRecordNumber % 3
         val kafkarecord = new ProducerRecord[String, String](topic, record.getRecordNumber.toString, bookrecord)
         val metadata = producer.send(kafkarecord)
         printf(s"sent kafkarecord(key=%s value=%s) " +
@@ -57,7 +60,7 @@ object SimleKafkaProducer extends App {
           kafkarecord.key(), kafkarecord.value(),
           metadata.get().partition(),
           metadata.get().offset())
-        //println(record.getRecordNumber)
+        //println(record.getRecordNumber % 3)
         //println(bookrecord)
 
       }
